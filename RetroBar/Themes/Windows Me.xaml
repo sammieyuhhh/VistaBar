@@ -26,4 +26,96 @@
     </Style>
 
     <FontFamily x:Key="GlobalFontFamily">Microsoft Sans Serif</FontFamily>
+    <Style TargetType="Button"
+           x:Key="NotifyBalloonCloseButton"
+           BasedOn="{StaticResource NotifyBalloonCloseButton}">
+        <Setter Property="Visibility"
+                Value="Visible" />
+    </Style>
+
+    <Style TargetType="ContentControl"
+           x:Key="NotifyBalloon"
+           BasedOn="{StaticResource GlobalFonts}">
+        <Setter Property="Foreground"
+                Value="{DynamicResource ToolTipForeground}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentControl">
+                    <DockPanel>
+                        <Border BorderThickness="1"
+                                BorderBrush="{DynamicResource ToolTipForeground}"
+                                Background="{DynamicResource ToolTipBackground}"
+                                CornerRadius="8"
+                                DockPanel.Dock="Top"
+                                Name="Border">
+                            <ContentPresenter Margin="11,6,11,9" />
+                        </Border>
+                        <Path Stroke="{DynamicResource ToolTipForeground}"
+                              Fill="{DynamicResource ToolTipBackground}"
+                              HorizontalAlignment="Right"
+                              Width="21"
+                              Height="21"
+                              StrokeThickness="1"
+                              Margin="13,-1,13,0"
+                              Data="M 0,0 l 20,20 V 0"
+                              DockPanel.Dock="Bottom"
+                              RenderOptions.EdgeMode="Aliased"
+                              Visibility="Visible"
+                              Name="Arrow" />
+                    </DockPanel>
+                    <ControlTemplate.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Path=AppBarEdge, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                           Value="Left" />
+                                <Condition Binding="{Binding Path=FlowDirection, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                           Value="LeftToRight" />
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.Setters>
+                                <Setter TargetName="Arrow"
+                                        Property="Data"
+                                        Value="M 0,0 V 20 l 20,-20" />
+                                <Setter TargetName="Arrow"
+                                        Property="HorizontalAlignment"
+                                        Value="Left" />
+                            </MultiDataTrigger.Setters>
+                        </MultiDataTrigger>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding Path=AppBarEdge, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                           Value="Right" />
+                                <Condition Binding="{Binding Path=FlowDirection, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                           Value="RightToLeft" />
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.Setters>
+                                <Setter TargetName="Arrow"
+                                        Property="Data"
+                                        Value="M 0,0 V 20 l 20,-20" />
+                                <Setter TargetName="Arrow"
+                                        Property="HorizontalAlignment"
+                                        Value="Left" />
+                            </MultiDataTrigger.Setters>
+                        </MultiDataTrigger>
+                        <DataTrigger Binding="{Binding Path=AppBarEdge, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Window}}}"
+                                     Value="Top">
+                            <DataTrigger.Setters>
+                                <Setter TargetName="Border"
+                                        Property="DockPanel.Dock"
+                                        Value="Bottom" />
+                                <Setter TargetName="Arrow"
+                                        Property="Data"
+                                        Value="M 0,20 l 20,-20 v 20" />
+                                <Setter TargetName="Arrow"
+                                        Property="DockPanel.Dock"
+                                        Value="Top" />
+                                <Setter TargetName="Arrow"
+                                        Property="Margin"
+                                        Value="13,0,13,-2" />
+                            </DataTrigger.Setters>
+                        </DataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 </ResourceDictionary>
