@@ -11,6 +11,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Threading;
 using Tray = ManagedShell.WindowsTray;
 
@@ -25,6 +26,7 @@ namespace RetroBar.Controls
         private ObservableCollection<Tray.NotifyIcon> promotedIcons = new ObservableCollection<Tray.NotifyIcon>();
         private NotifyIconDropHandler dropHandler;
         private ListCollectionView collectionView;
+        private bool gapUpdatePending;
 
         public static DependencyProperty NotificationAreaProperty = DependencyProperty.Register(nameof(NotificationArea), typeof(NotificationArea), typeof(NotifyIconList), new PropertyMetadata(NotificationAreaChangedCallback));
 
@@ -64,6 +66,11 @@ namespace RetroBar.Controls
                 // Reload icons
                 collectionView?.Refresh();
             }
+            else if (e.PropertyName == nameof(Settings.Theme))
+            {
+                // The theme decides how much space separates the system icons
+                scheduleSystemIconGapUpdate();
+            }
         }
 
         private void SetNotificationAreaCollections()
@@ -83,6 +90,8 @@ namespace RetroBar.Controls
                 collectionViewShaping.LiveFilteringProperties.Add("IsHidden");
                 collectionViewShaping.LiveFilteringProperties.Add("IsPinned");
                 NotifyIcons.ItemsSource = collectionView;
+                ((INotifyCollectionChanged)collectionView).CollectionChanged += CollectionView_CollectionChanged;
+                scheduleSystemIconGapUpdate();
 
                 if (Settings.Instance.CollapseNotifyIcons)
                 {
@@ -202,12 +211,92 @@ namespace RetroBar.Controls
                 Settings.Instance.PropertyChanged -= Settings_PropertyChanged;
             }
 
+            if (collectionView != null)
+            {
+                ((INotifyCollectionChanged)collectionView).CollectionChanged -= CollectionView_CollectionChanged;
+            }
+
             _isLoaded = false;
         }
 
         private void UnpinnedIcons_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             SetToggleVisibility();
+        }
+
+        private void CollectionView_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            scheduleSystemIconGapUpdate();
+        }
+
+        private static bool isSystemIcon(Tray.NotifyIcon icon)
+        {
+            return icon.IsEqualByIdentifier(Tray.NotificationArea.NETWORK_GUID)
+                || icon.IsEqualByIdentifier(Tray.NotificationArea.POWER_GUID)
+                || icon.IsEqualByIdentifier(Tray.NotificationArea.VOLUME_GUID);
+        }
+
+        private static RetroBar.Controls.NotifyIcon findNotifyIconControl(DependencyObject parent)
+        {
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+
+            for (int i = 0; i < count; i++)
+            {
+                DependencyObject child = VisualTreeHelper.GetChild(parent, i);
+
+                if (child is RetroBar.Controls.NotifyIcon control)
+                {
+                    return control;
+                }
+
+                RetroBar.Controls.NotifyIcon found = findNotifyIconControl(child);
+
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private void scheduleSystemIconGapUpdate()
+        {
+            if (gapUpdatePending) return;
+
+            gapUpdatePending = true;
+
+            // wait until the icon containers have been generated
+            Dispatcher.BeginInvoke(DispatcherPriority.Loaded, new Action(() =>
+            {
+                gapUpdatePending = false;
+                updateSystemIconGaps();
+            }));
+        }
+
+
+        private void updateSystemIconGaps()
+        {
+            if (collectionView == null) return;
+
+            double gap = TryFindResource("NotifyIconSystemGap") as double? ?? 0;
+            Orientation orientation = (Window.GetWindow(this) as Taskbar)?.Orientation ?? Orientation.Horizontal;
+            bool previousWasSystem = true; // never add a gap before the very first icon
+
+            foreach (object item in NotifyIcons.Items)
+            {
+                if (!(item is Tray.NotifyIcon icon)) continue;
+
+                bool system = isSystemIcon(icon);
+
+                if (NotifyIcons.ItemContainerGenerator.ContainerFromItem(item) is DependencyObject container &&
+                    findNotifyIconControl(container) is RetroBar.Controls.NotifyIcon control)
+                {
+                    control.SetLeadingGap(system && !previousWasSystem ? gap : 0, orientation);
+                }
+
+                previousWasSystem = system;
+            }
         }
 
         private void NotifyIconToggleButton_OnClick(object sender, RoutedEventArgs e)

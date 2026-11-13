@@ -32,6 +32,13 @@ namespace RetroBar.Controls
             InitializeComponent();
         }
 
+        internal void SetLeadingGap(double gap, Orientation orientation)
+        {
+            Margin = orientation == Orientation.Horizontal
+                ? new Thickness(gap, 0, 0, 0)
+                : new Thickness(0, gap, 0, 0);
+        }
+
         private void applyEffects()
         {
             if (TrayIcon == null || Settings.Instance.InvertIconsMode == InvertIconsOption.Never)
