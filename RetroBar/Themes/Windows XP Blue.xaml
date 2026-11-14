@@ -2393,10 +2393,6 @@
         </Setter>
     </Style>
 
-    <!-- Real Windows XP balloon tips were a near-rectangular box, not the heavily
-         rounded "glass bubble" Vista introduced. Colors are already correct via
-         ToolTipBackground (#FFFFE1, classic tooltip yellow) and the inherited bold
-         title - only the shape needed to match. -->
     <Style TargetType="ContentControl"
            x:Key="NotifyBalloon"
            BasedOn="{StaticResource GlobalFonts}">
